@@ -35,7 +35,7 @@
 - [x] **4.3 Output gate.** DONE `safety/output_gate.py`: groundedness gate (mini judge, binary) + domain-refusal (e.g. individualized clinical advice → refuse + escalate). *DoD:* unsupported draft is blocked; out-of-bounds request refused.
 
 ### Phase 5 — Receipt, audit, metering; wire the API
-- [ ] **5.1 Audit + metering.** `audit.py` (SQLite): persist Trust Receipts, fetch by id; record tokens/latency/cost. *DoD:* a query writes a receipt; `get_receipt(id)` returns it.
+- [~] **5.1 Audit + metering.** IN PROGRESS (claude-code) `audit.py` (SQLite): persist Trust Receipts, fetch by id; record tokens/latency/cost. *DoD:* a query writes a receipt; `get_receipt(id)` returns it.
 - [ ] **5.2 Wire `/v1/query` + `/v1/sources` + `/v1/receipts/{id}` + `/v1/usage`.** Full path through guardrails→responder→gate→receipt. *DoD:* `/v1/query` returns a complete Trust Receipt; usage aggregates.
 
 ### Phase 6 — Console + DEPLOY (do not skip; deploy as soon as this passes)
