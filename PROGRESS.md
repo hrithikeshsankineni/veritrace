@@ -30,7 +30,7 @@
 - [x] **3.3 Responder agent.** DONE `responder/agent.py`: intent routing (knowledge vs action; action stubbed for now) + orchestrates rewrite→retrieve→rerank→evidence→generate-or-abstain. *DoD:* end-to-end `answer(query, tenant)` returns answer or calibrated abstention.
 
 ### Phase 4 — Safety
-- [~] **4.1 Redaction firewall.** IN PROGRESS (claude-code) `safety/redaction.py`: detect PII/PHI (regex first layer) → typed placeholders before any model call → restore at edge. *DoD:* a query with a fake member id never passes raw value to `llm.complete` (assert on the mock call); output restores it.
+- [x] **4.1 Redaction firewall.** DONE `safety/redaction.py`: detect PII/PHI (regex first layer) → typed placeholders before any model call → restore at edge. *DoD:* a query with a fake member id never passes raw value to `llm.complete` (assert on the mock call); output restores it.
 - [ ] **4.2 Input guardrails.** `safety/guardrails.py`: injection pattern block + topic/scope classifier (nano). *DoD:* injection and off-scope inputs are blocked with reasons.
 - [ ] **4.3 Output gate.** `safety/output_gate.py`: groundedness gate (mini judge, binary) + domain-refusal (e.g. individualized clinical advice → refuse + escalate). *DoD:* unsupported draft is blocked; out-of-bounds request refused.
 
