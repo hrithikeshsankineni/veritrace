@@ -18,7 +18,7 @@ and context.types for inclusion in the Trust Receipt.
 
 Detected types (regex layer)
 -----------------------------
-- member_id  : MBR-XXXXXX format
+- member_id  : MBR-XXXXXX or M-XXXXX format (any prefix of 1+ letters followed by - and 4+ digits)
 - ssn        : NNN-NN-NNNN
 - phone      : (NNN) NNN-NNNN or NNN-NNN-NNNN
 - email      : standard email addresses
@@ -48,7 +48,7 @@ class _Pattern:
 
 
 _PATTERNS: list[_Pattern] = [
-    _Pattern("member_id",   re.compile(r"\bMBR-\d{6,}\b")),
+    _Pattern("member_id",   re.compile(r"\b[A-Z]{1,4}-\d{4,}\b")),
     _Pattern("ssn",         re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
     _Pattern("credit_card", re.compile(r"\b\d{4}[- ]\d{4}[- ]\d{4}[- ]\d{4}\b")),
     _Pattern("phone",       re.compile(

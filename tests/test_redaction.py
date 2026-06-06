@@ -23,6 +23,35 @@ def test_member_id_redacted():
     assert "member_id" in ctx.types_detected
 
 
+def test_member_id_short_format_redacted():
+    """M-XXXXX format (shorter prefix) must also be redacted."""
+    text, ctx = redact("My member ID is M-99182.")
+    assert "M-99182" not in text
+    assert "member_id" in ctx.types_detected
+    assert ctx.applied is True
+
+
+def test_member_id_short_format_never_reaches_llm():
+    """M-99182 must not appear in any llm.complete call after redaction."""
+    calls: list[list[dict]] = []
+
+    def fake_complete(tier, messages, **kwargs):
+        calls.append(messages)
+        return "Mock answer."
+
+    query = "My member ID is M-99182."
+    redacted_q, ctx = redact(query)
+    assert "M-99182" not in redacted_q, "Redact step must remove M-99182 before LLM call"
+
+    with patch("veritrace.llm.complete", side_effect=fake_complete):
+        from veritrace.retrieval.rewrite import rewrite
+        rewrite(redacted_q)
+
+    for messages in calls:
+        for msg in messages:
+            assert "M-99182" not in str(msg), f"Raw member ID leaked to LLM: {msg}"
+
+
 def test_ssn_redacted():
     text, ctx = redact("SSN: 123-45-6789")
     assert "123-45-6789" not in text
