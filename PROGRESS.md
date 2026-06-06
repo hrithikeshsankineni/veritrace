@@ -22,7 +22,7 @@
 ### Phase 2 — Index + retrieval
 - [x] **2.1 Embeddings + store.** DONE `index/embeddings.py` (uses `llm.embed`) + `index/store.py` (Chroma; **mandatory `tenant_id` filter** on every query). *DoD:* ingest sample chunks; a tenant-filtered query returns only that tenant's chunks (test with two tenants).
 - [x] **2.2 Query rewrite.** DONE `retrieval/rewrite.py` (nano tier). *DoD:* rewrites a messy query; passes through cleanly in mock mode.
-- [~] **2.3 Retrieve + re-rank.** IN PROGRESS (claude-code) `retrieval/retrieve.py` (wide top-20, tenant-filtered) + `retrieval/rerank.py` (local cross-encoder → top-4). *DoD:* test shows re-rank reorders candidates; returns top-k with scores.
+- [x] **2.3 Retrieve + re-rank.** DONE `retrieval/retrieve.py` (wide top-20, tenant-filtered) + `retrieval/rerank.py` (local cross-encoder → top-4). *DoD:* test shows re-rank reorders candidates; returns top-k with scores.
 
 ### Phase 3 — Responder
 - [ ] **3.1 Evidence evaluation.** `responder/evidence.py`: sufficiency check → if weak, signal abstention. *DoD:* sufficient evidence → proceed; weak → abstain signal (test both).
