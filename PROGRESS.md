@@ -12,7 +12,7 @@
 - [x] **0.1 Repo scaffold.** DONE Create the full directory structure from AGENTS.md §4, `requirements.txt`, `.env.example`, `.gitignore`, empty `__init__.py` files, and a starter `README.md`. *DoD:* `pip install -r requirements.txt` succeeds in a fresh venv; repo matches §4.
 - [x] **0.2 Config + LLM wrapper.** DONE `config.py` (env settings, `MOCK_LLM`, model tiers). `llm.py` with `complete(tier, messages)` and `embed(texts)`; when `MOCK_LLM=true` return deterministic stubs (no network). *DoD:* importing core with no key works; a unit test calls `complete`/`embed` in mock mode.
 - [x] **0.3 Schemas.** DONE `schemas.py` with pydantic models: `Source`, `QueryRequest`, `Citation`, `TrustReceipt` (fields per System Design §6.11), `AssuranceReport`. *DoD:* models validate; `TrustReceipt` round-trips to/from JSON.
-- [~] **0.4 FastAPI skeleton.** IN PROGRESS (claude-code) `api/main.py` with `/health` and stub `/v1/query`. *DoD:* `uvicorn api.main:app` serves; `/docs` renders; `/health` returns ok.
+- [x] **0.4 FastAPI skeleton.** DONE `api/main.py` with `/health` and stub `/v1/query`. *DoD:* `uvicorn api.main:app` serves; `/docs` renders; `/health` returns ok.
 
 ### Phase 1 — Synthetic data + ingestion
 - [ ] **1.1 Seed data.** `data/seed.py` generates a synthetic, regulated-style corpus deterministically: formulary + policies (Markdown/text) with `authority_level`, `effective_date`, `supersedes` metadata; **deliberately include** (a) a versioned conflict, (b) a superseded-but-present doc, (c) a coverage gap (answerable-looking question with no source), (d) synthetic member profiles with fake PII/PHI; plus `data/synthetic/records.sqlite` for tool calls. *DoD:* running it writes files under `data/synthetic/`; re-running reproduces identical output.
