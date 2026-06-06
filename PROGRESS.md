@@ -32,7 +32,7 @@
 ### Phase 4 — Safety
 - [x] **4.1 Redaction firewall.** DONE `safety/redaction.py`: detect PII/PHI (regex first layer) → typed placeholders before any model call → restore at edge. *DoD:* a query with a fake member id never passes raw value to `llm.complete` (assert on the mock call); output restores it.
 - [x] **4.2 Input guardrails.** DONE `safety/guardrails.py`: injection pattern block + topic/scope classifier (nano). *DoD:* injection and off-scope inputs are blocked with reasons.
-- [ ] **4.3 Output gate.** `safety/output_gate.py`: groundedness gate (mini judge, binary) + domain-refusal (e.g. individualized clinical advice → refuse + escalate). *DoD:* unsupported draft is blocked; out-of-bounds request refused.
+- [~] **4.3 Output gate.** IN PROGRESS (claude-code) `safety/output_gate.py`: groundedness gate (mini judge, binary) + domain-refusal (e.g. individualized clinical advice → refuse + escalate). *DoD:* unsupported draft is blocked; out-of-bounds request refused.
 
 ### Phase 5 — Receipt, audit, metering; wire the API
 - [ ] **5.1 Audit + metering.** `audit.py` (SQLite): persist Trust Receipts, fetch by id; record tokens/latency/cost. *DoD:* a query writes a receipt; `get_receipt(id)` returns it.
