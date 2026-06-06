@@ -25,7 +25,7 @@
 - [x] **2.3 Retrieve + re-rank.** DONE `retrieval/retrieve.py` (wide top-20, tenant-filtered) + `retrieval/rerank.py` (local cross-encoder → top-4). *DoD:* test shows re-rank reorders candidates; returns top-k with scores.
 
 ### Phase 3 — Responder
-- [ ] **3.1 Evidence evaluation.** `responder/evidence.py`: sufficiency check → if weak, signal abstention. *DoD:* sufficient evidence → proceed; weak → abstain signal (test both).
+- [~] **3.1 Evidence evaluation.** IN PROGRESS (claude-code) `responder/evidence.py`: sufficiency check → if weak, signal abstention. *DoD:* sufficient evidence → proceed; weak → abstain signal (test both).
 - [ ] **3.2 Generation.** `responder/generate.py` (mini tier): grounded answer + citations from top-k only. *DoD:* answer cites provided chunks; mock mode returns a deterministic grounded stub.
 - [ ] **3.3 Responder agent.** `responder/agent.py`: intent routing (knowledge vs action; action stubbed for now) + orchestrates rewrite→retrieve→rerank→evidence→generate-or-abstain. *DoD:* end-to-end `answer(query, tenant)` returns answer or calibrated abstention.
 
