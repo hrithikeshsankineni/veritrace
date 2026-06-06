@@ -9,7 +9,7 @@
 ## Tier 1 — Minimum Live Product (must ship + deploy)
 
 ### Phase 0 — Scaffold
-- [~] **0.1 Repo scaffold.** IN PROGRESS (claude-code) Create the full directory structure from AGENTS.md §4, `requirements.txt`, `.env.example`, `.gitignore`, empty `__init__.py` files, and a starter `README.md`. *DoD:* `pip install -r requirements.txt` succeeds in a fresh venv; repo matches §4.
+- [x] **0.1 Repo scaffold.** DONE Create the full directory structure from AGENTS.md §4, `requirements.txt`, `.env.example`, `.gitignore`, empty `__init__.py` files, and a starter `README.md`. *DoD:* `pip install -r requirements.txt` succeeds in a fresh venv; repo matches §4.
 - [ ] **0.2 Config + LLM wrapper.** `config.py` (env settings, `MOCK_LLM`, model tiers). `llm.py` with `complete(tier, messages)` and `embed(texts)`; when `MOCK_LLM=true` return deterministic stubs (no network). *DoD:* importing core with no key works; a unit test calls `complete`/`embed` in mock mode.
 - [ ] **0.3 Schemas.** `schemas.py` with pydantic models: `Source`, `QueryRequest`, `Citation`, `TrustReceipt` (fields per System Design §6.11), `AssuranceReport`. *DoD:* models validate; `TrustReceipt` round-trips to/from JSON.
 - [ ] **0.4 FastAPI skeleton.** `api/main.py` with `/health` and stub `/v1/query`. *DoD:* `uvicorn api.main:app` serves; `/docs` renders; `/health` returns ok.
@@ -62,6 +62,7 @@
 
 ## Decisions / Notes
 *(Agents: append one line per non-obvious choice or deviation, newest last.)*
+- 0.1: Dropped `presidio-analyzer`, `presidio-anonymizer`, `spacy` from requirements — `blis` wheel fails to build on this platform (Python 3.9/macOS). PII redaction uses regex-only approach (AGENTS.md already specifies "regex first layer"). Note in safety/redaction.py task 4.1.
 
 ## Backlog (out of scope unless promoted)
 *(New ideas land here, not in the build.)*

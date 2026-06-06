@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+chroma/
+*.sqlite
+data/synthetic/*
+!data/synthetic/.gitkeep
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.DS_Store
