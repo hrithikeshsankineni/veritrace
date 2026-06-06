@@ -27,7 +27,7 @@
 ### Phase 3 — Responder
 - [x] **3.1 Evidence evaluation.** DONE `responder/evidence.py`: sufficiency check → if weak, signal abstention. *DoD:* sufficient evidence → proceed; weak → abstain signal (test both).
 - [x] **3.2 Generation.** DONE `responder/generate.py` (mini tier): grounded answer + citations from top-k only. *DoD:* answer cites provided chunks; mock mode returns a deterministic grounded stub.
-- [ ] **3.3 Responder agent.** `responder/agent.py`: intent routing (knowledge vs action; action stubbed for now) + orchestrates rewrite→retrieve→rerank→evidence→generate-or-abstain. *DoD:* end-to-end `answer(query, tenant)` returns answer or calibrated abstention.
+- [~] **3.3 Responder agent.** IN PROGRESS (claude-code) `responder/agent.py`: intent routing (knowledge vs action; action stubbed for now) + orchestrates rewrite→retrieve→rerank→evidence→generate-or-abstain. *DoD:* end-to-end `answer(query, tenant)` returns answer or calibrated abstention.
 
 ### Phase 4 — Safety
 - [ ] **4.1 Redaction firewall.** `safety/redaction.py`: detect PII/PHI (regex first layer) → typed placeholders before any model call → restore at edge. *DoD:* a query with a fake member id never passes raw value to `llm.complete` (assert on the mock call); output restores it.
