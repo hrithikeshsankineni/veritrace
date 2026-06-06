@@ -20,7 +20,7 @@
 - [x] **1.3 Chunker.** DONE `ingest/chunker.py`: structure-aware (headings/sections/clauses), hierarchical (leaf→parent), deterministic, carries all governance metadata. *DoD:* test asserts chunks split on structure, are stable across runs, and retain metadata.
 
 ### Phase 2 — Index + retrieval
-- [~] **2.1 Embeddings + store.** IN PROGRESS (claude-code) `index/embeddings.py` (uses `llm.embed`) + `index/store.py` (Chroma; **mandatory `tenant_id` filter** on every query). *DoD:* ingest sample chunks; a tenant-filtered query returns only that tenant's chunks (test with two tenants).
+- [x] **2.1 Embeddings + store.** DONE `index/embeddings.py` (uses `llm.embed`) + `index/store.py` (Chroma; **mandatory `tenant_id` filter** on every query). *DoD:* ingest sample chunks; a tenant-filtered query returns only that tenant's chunks (test with two tenants).
 - [ ] **2.2 Query rewrite.** `retrieval/rewrite.py` (nano tier). *DoD:* rewrites a messy query; passes through cleanly in mock mode.
 - [ ] **2.3 Retrieve + re-rank.** `retrieval/retrieve.py` (wide top-20, tenant-filtered) + `retrieval/rerank.py` (local cross-encoder → top-4). *DoD:* test shows re-rank reorders candidates; returns top-k with scores.
 
