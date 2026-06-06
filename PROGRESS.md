@@ -36,7 +36,7 @@
 
 ### Phase 5 — Receipt, audit, metering; wire the API
 - [x] **5.1 Audit + metering.** DONE `audit.py` (SQLite): persist Trust Receipts, fetch by id; record tokens/latency/cost. *DoD:* a query writes a receipt; `get_receipt(id)` returns it.
-- [~] **5.2 Wire `/v1/query` + `/v1/sources` + `/v1/receipts/{id}` + `/v1/usage`.** IN PROGRESS (claude-code) Full path through guardrails→responder→gate→receipt. *DoD:* `/v1/query` returns a complete Trust Receipt; usage aggregates.
+- [x] **5.2 Wire `/v1/query` + `/v1/sources` + `/v1/receipts/{id}` + `/v1/usage`.** DONE Full path through guardrails→responder→gate→receipt. *DoD:* `/v1/query` returns a complete Trust Receipt; usage aggregates.
 
 ### Phase 6 — Console + DEPLOY (do not skip; deploy as soon as this passes)
 - [ ] **6.1 Streamlit console.** `console/app.py`: chat input → answer + **evidence panel** (citations, confidence, redaction, cost/latency). Imports core directly. *DoD:* local console answers a question with evidence panel.
