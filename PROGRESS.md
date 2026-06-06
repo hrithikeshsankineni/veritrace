@@ -17,7 +17,7 @@
 ### Phase 1 — Synthetic data + ingestion
 - [x] **1.1 Seed data.** DONE `data/seed.py` generates a synthetic, regulated-style corpus deterministically: formulary + policies (Markdown/text) with `authority_level`, `effective_date`, `supersedes` metadata; **deliberately include** (a) a versioned conflict, (b) a superseded-but-present doc, (c) a coverage gap (answerable-looking question with no source), (d) synthetic member profiles with fake PII/PHI; plus `data/synthetic/records.sqlite` for tool calls. *DoD:* running it writes files under `data/synthetic/`; re-running reproduces identical output.
 - [x] **1.2 Parsers.** DONE `ingest/parsers.py` for PDF, Markdown, plain text → normalized text + metadata. *DoD:* each format parses to text with metadata in a test.
-- [~] **1.3 Chunker.** IN PROGRESS (claude-code) `ingest/chunker.py`: structure-aware (headings/sections/clauses), hierarchical (leaf→parent), deterministic, carries all governance metadata. *DoD:* test asserts chunks split on structure, are stable across runs, and retain metadata.
+- [x] **1.3 Chunker.** DONE `ingest/chunker.py`: structure-aware (headings/sections/clauses), hierarchical (leaf→parent), deterministic, carries all governance metadata. *DoD:* test asserts chunks split on structure, are stable across runs, and retain metadata.
 
 ### Phase 2 — Index + retrieval
 - [ ] **2.1 Embeddings + store.** `index/embeddings.py` (uses `llm.embed`) + `index/store.py` (Chroma; **mandatory `tenant_id` filter** on every query). *DoD:* ingest sample chunks; a tenant-filtered query returns only that tenant's chunks (test with two tenants).
