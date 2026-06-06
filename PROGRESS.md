@@ -39,7 +39,7 @@
 - [x] **5.2 Wire `/v1/query` + `/v1/sources` + `/v1/receipts/{id}` + `/v1/usage`.** DONE Full path through guardrails→responder→gate→receipt. *DoD:* `/v1/query` returns a complete Trust Receipt; usage aggregates.
 
 ### Phase 6 — Console + DEPLOY (do not skip; deploy as soon as this passes)
-- [ ] **6.1 Streamlit console.** `console/app.py`: chat input → answer + **evidence panel** (citations, confidence, redaction, cost/latency). Imports core directly. *DoD:* local console answers a question with evidence panel.
+- [~] **6.1 Streamlit console.** IN PROGRESS (claude-code) `console/app.py`: chat input → answer + **evidence panel** (citations, confidence, redaction, cost/latency). Imports core directly. *DoD:* local console answers a question with evidence panel.
 - [ ] **6.2 DEPLOY.** Push to GitHub; deploy console to Streamlit Community Cloud; set secrets. *DoD:* **public URL is live and answers a question.** Put the URL in README. ← MLP COMPLETE
 
 ---
