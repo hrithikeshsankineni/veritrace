@@ -288,8 +288,8 @@ with tab_assure:
             with st.expander(label, expanded=not r.passed):
                 st.markdown(f"**Prompt:** {r.prompt}")
                 st.markdown(f"**Result:** {r.notes}")
-                with st.expander("Trust Receipt", expanded=False):
-                    st.json(r.receipt.model_dump(mode="json"))
+                st.caption("Trust Receipt")
+                st.json(r.receipt.model_dump(mode="json"))
 
         # Findings
         if report.findings:

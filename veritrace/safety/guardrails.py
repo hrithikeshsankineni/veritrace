@@ -43,6 +43,11 @@ _INJECTION_PATTERNS: list[re.Pattern] = [
         r"reveal\s+(your\s+)?(system\s+)?prompt",
         r"print\s+(your\s+)?(system\s+)?instructions",
         r"what\s+are\s+your\s+instructions",
+        # PII extraction patterns
+        r"\bssn\b",
+        r"social\s+security\s+number",
+        r"list\s+(all|every)\s+(?:member|patient)",
+        r"what\s+(?:medications?|drugs?|prescriptions?)\s+is\s+(?:member|patient)\b",
     ]
 ]
 

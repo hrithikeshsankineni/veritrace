@@ -32,10 +32,19 @@ Rules:
 
 
 def rewrite(query: str) -> str:
-    """Return a retrieval-optimised rewrite of *query* (nano tier)."""
+    """Return a retrieval-optimised rewrite of *query* (nano tier).
+
+    In mock mode returns the query unchanged so that mock embedding/rerank
+    scores reflect the original query keywords (no real LLM available).
+    """
+    from veritrace.config import settings
+
     query = query.strip()
     if not query:
         return query
+
+    if settings.mock_llm:
+        return query  # pass-through — no real model to call
 
     messages = [
         {"role": "system", "content": _SYSTEM_PROMPT},

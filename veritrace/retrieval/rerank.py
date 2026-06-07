@@ -22,10 +22,18 @@ rerank(query, candidates, top_k) -> list[RankedResult]
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import TypedDict
 
 from veritrace.config import settings
 from veritrace.index.store import SearchResult
+
+# Common domain words that appear in nearly every query AND every chunk —
+# excluding them lets the overlap score reflect topic-specific relevance.
+_MOCK_STOP: frozenset = frozenset([
+    "covered", "coverage", "member", "members", "health", "plan", "plans",
+    "under", "about", "medical", "dental", "their", "cosmetic",
+])
 
 _CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 _encoder = None  # module-level cache
@@ -48,10 +56,29 @@ def _get_encoder():
 
 
 def _mock_score(query: str, text: str) -> float:
-    """Deterministic mock cross-encoder score for testing."""
+    """Deterministic mock cross-encoder score for testing.
+
+    Uses keyword overlap (7+ char words, minus common domain stop-words) as
+    the primary relevance signal so that queries about topics absent from the
+    KB reliably score below the abstention threshold.  A small hash-based
+    tiebreaker (≤0.14) preserves deterministic ordering when overlap is equal
+    but keeps no-overlap scores strictly below the 0.15 abstain threshold.
+    Falls back to the raw hash score when the query has no significant keywords
+    (no filtering possible), so short queries never get unfairly penalised.
+    """
     digest = hashlib.sha256(f"{query}:{text}".encode()).digest()
-    # Map first byte to [0.0, 1.0]
-    return int(digest[0]) / 255.0
+    hash_score = int(digest[0]) / 255.0
+
+    q_words = {w for w in re.findall(r"\b\w{7,}\b", query.lower()) if w not in _MOCK_STOP}
+    if not q_words:
+        # No topic-specific keywords — use raw hash score (unchanged behaviour)
+        return hash_score
+
+    t_words = {w for w in re.findall(r"\b\w{7,}\b", text.lower()) if w not in _MOCK_STOP}
+    overlap = len(q_words & t_words) / len(q_words)
+    # 85 % overlap weight + up to 0.14 hash tiebreaker.
+    # No-overlap → max 0.14 < ABSTAIN_THRESHOLD (0.15) → always abstains.
+    return overlap * 0.85 + hash_score * 0.14
 
 
 def rerank(
