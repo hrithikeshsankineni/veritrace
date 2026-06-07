@@ -3,18 +3,15 @@
 Public API
 ----------
 answer(query, tenant_id, store, start_time) -> TrustReceipt
-    Run the complete pipeline for a knowledge query and return a TrustReceipt.
+    Run the complete pipeline for a knowledge query or MCP tool action.
 
 Pipeline
 --------
 1. Intent routing: classify query as "knowledge" or "action".
-   Action intents are stubbed (returns a not-yet-implemented notice).
-2. Query rewrite (nano tier).
-3. Wide retrieval (top-20, tenant-scoped).
-4. Cross-encoder re-rank (top-4).
-5. Evidence sufficiency check.
-6. Grounded generation (mini tier) OR calibrated abstention.
-7. Seal into TrustReceipt.
+2a. Action: dispatch to MCP tool server (verify-then-execute gate).
+2b. Knowledge: query rewrite → wide retrieval → re-rank → conflict resolve
+    → evidence check → grounded generation or calibrated abstention.
+3. Seal into TrustReceipt.
 
 The caller is responsible for safety (guardrails + redaction + output gate)
 which wrap this agent in the API layer.
@@ -99,15 +96,23 @@ def answer(
     intent = _classify_intent(query)
 
     if intent == "action":
+        from veritrace.tools.mcp_server import dispatch as mcp_dispatch
+        action_info = mcp_dispatch(query, tenant_id)
         latency_ms = (time.time() - t0) * 1000
+        answer_text = action_info.result or "Action completed."
+        if not action_info.verified:
+            answer_text = (
+                f"I was unable to complete that action: {action_info.result} "
+                "Please provide your Member ID (e.g. MBR-100042) and try again, "
+                "or contact Member Services for assistance."
+            )
         return TrustReceipt(
             tenant=tenant_id,
-            route="knowledge",  # keeps schema valid; action route TBD
-            answer=(
-                "Action requests are not yet available in this version. "
-                "Please contact Member Services to complete this request."
-            ),
-            confidence="insufficient-evidence",
+            route="action",
+            answer=answer_text,
+            confidence="well-grounded" if action_info.verified else "insufficient-evidence",
+            action=action_info,
+            groundedness_score=1.0 if action_info.verified else 0.0,
             latency_ms=round(latency_ms, 1),
             model_profile="nano",
         )

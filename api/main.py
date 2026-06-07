@@ -279,6 +279,13 @@ def usage(tenant_id: str = settings.default_tenant) -> dict:
 # Assurance Engine
 # ---------------------------------------------------------------------------
 
+@app.get("/v1/tools", tags=["tools"])
+def list_tools() -> list[dict]:
+    """List available MCP tool definitions (name, description, parameters)."""
+    from veritrace.tools.mcp_server import list_tools as _list_tools
+    return _list_tools()
+
+
 @app.post("/v1/assure", tags=["assurance"])
 def assure(tenant_id: str = settings.default_tenant) -> dict:
     """Run the Assurance Engine scan and return a Trust Score + report.

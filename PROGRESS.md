@@ -53,7 +53,7 @@
 ## Tier 3 — Enhancements (only if time remains)
 
 - [x] **8.1 Conflict resolution.** DONE `responder/conflict.py`: detect conflicting top-k by explicit supersedes link or effective_date; resolve to newer doc; filter superseded candidates before generation; disclose in ConflictInfo of Trust Receipt. 14 tests.
-- [ ] **8.2 MCP tool server + verified action.** `tools/mcp_server.py` + `tools/actions.py`: one read tool + one state-changing tool behind a verify-then-execute gate; agent routes action intents to it. *DoD:* an action query executes a verified, logged tool call.
+- [x] **8.2 MCP tool server + verified action.** DONE `tools/mcp_server.py` + `tools/actions.py`: `lookup_coverage` (READ) + `file_inquiry` (WRITE) behind verify-then-execute gate; agent routes action intents to MCP dispatcher; `route="action"` + `ActionInfo` in TrustReceipt; `/v1/tools` endpoint; 18 tests. Console shows "Tool Execution" card for action responses.
 - [x] **8.3 Short-term memory.** DONE `memory.py` (thread-safe SessionMemory, MAX_TURNS=10) + `/v1/chat` endpoint. History injected into generation prompt for follow-up questions. 11 tests.
 - [x] **8.4 Semantic cache.** DONE `cache.py`: cosine similarity ≥0.92 short-circuits retrieval; LRU eviction per tenant (max 256); route set to "cached". 9 tests.
 - [x] **8.5 Evals harness + golden set.** DONE `evals/golden.jsonl` (40 cases across 7 categories) + `evals/__main__.py` runner. `python -m evals` prints per-category metrics + writes evals/last_run.json. 9 harness tests.

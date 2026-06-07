@@ -98,12 +98,15 @@ def test_answer_model_profile_set(store_with_data):
 
 
 # ---------------------------------------------------------------------------
-# Action intent stub
+# Action intent routing — MCP dispatch
 # ---------------------------------------------------------------------------
 
-def test_action_intent_stubbed(store_with_data):
+def test_action_intent_routes_to_mcp(store_with_data):
+    """Action queries should route to the MCP dispatcher (route='action')."""
     receipt = answer("open ticket for my denied claim", "demo", store_with_data)
-    assert "not yet available" in receipt.answer.lower() or receipt.confidence == "abstained"
+    assert receipt.route == "action"
+    assert receipt.action is not None
+    assert receipt.action.tool in ("lookup_coverage", "file_inquiry")
 
 
 # ---------------------------------------------------------------------------
