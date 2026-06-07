@@ -1,16 +1,19 @@
-"""OpenAI client wrapper with mock stubs.
+"""LLM client wrapper with provider selection and mock stubs.
+
+Provider selection (evaluated once at import time):
+  MOCK_LLM=true                           → deterministic stubs, no network
+  MOCK_LLM=false, OPENAI_API_KEY set      → OpenAI (gpt-5.4-mini / gpt-5.4-nano)
+  MOCK_LLM=false, OPENAI_API_KEY empty,
+                  GROQ_API_KEY set        → Groq  (llama-3.3-70b / llama-3.1-8b)
+
+Embeddings:
+  mock / OpenAI  → OpenAI text-embedding-3-small (or mock unit vectors)
+  Groq           → local sentence-transformers all-MiniLM-L6-v2 (Groq has no embed API)
 
 Public API
 ----------
 complete(tier, messages, **kwargs) -> str
-    Call the LLM at the given tier ("mini" | "nano") and return the text of
-    the first choice.  When MOCK_LLM=true returns a deterministic stub.
-
 embed(texts) -> list[list[float]]
-    Embed a list of strings with text-embedding-3-small.
-    When MOCK_LLM=true returns deterministic unit vectors (dim=8).
-
-Both functions raise on unrecoverable errors; callers should handle them.
 """
 
 from __future__ import annotations
@@ -22,12 +25,37 @@ from veritrace.config import settings
 
 Tier = Literal["mini", "nano"]
 
-# Mock embedding dimensionality — small enough for fast tests
 _MOCK_EMBED_DIM = 8
 
+# ---------------------------------------------------------------------------
+# Provider detection (runs once on import)
+# ---------------------------------------------------------------------------
+
+def _detect_provider() -> str:
+    if settings.mock_llm:
+        return "mock"
+    if settings.openai_api_key and not settings.openai_api_key.startswith("sk-MOCK"):
+        return "openai"
+    if settings.groq_api_key:
+        return "groq"
+    # No real keys — fall back to mock rather than crash
+    return "mock"
+
+
+_PROVIDER = _detect_provider()
+
+_PROVIDER_LABELS = {
+    "mock": "LLM provider: mock",
+    "openai": f"LLM provider: openai ({settings.mini_model} / {settings.nano_model})",
+    "groq": f"LLM provider: groq ({settings.groq_mini_model} / {settings.groq_nano_model})",
+}
+print(_PROVIDER_LABELS[_PROVIDER])
+
+# ---------------------------------------------------------------------------
+# Mock stubs
+# ---------------------------------------------------------------------------
 
 def _mock_embed(text: str) -> list[float]:
-    """Return a deterministic unit vector derived from the text hash."""
     digest = hashlib.sha256(text.encode()).digest()
     raw = [int(b) - 128 for b in digest[:_MOCK_EMBED_DIM]]
     norm = (sum(x * x for x in raw) ** 0.5) or 1.0
@@ -35,7 +63,6 @@ def _mock_embed(text: str) -> list[float]:
 
 
 def _mock_complete(tier: Tier, messages: list[dict]) -> str:
-    """Return a deterministic stub response based on the last user message."""
     last = next(
         (m["content"] for m in reversed(messages) if m.get("role") == "user"),
         "default",
@@ -47,32 +74,41 @@ def _mock_complete(tier: Tier, messages: list[dict]) -> str:
         "Based on the provided context, the answer is grounded in the source documents."
     )
 
+# ---------------------------------------------------------------------------
+# Model name helpers
+# ---------------------------------------------------------------------------
 
-def _tier_model(tier: Tier) -> str:
+def _openai_model(tier: Tier) -> str:
     return settings.mini_model if tier == "mini" else settings.nano_model
 
 
-def complete(tier: Tier, messages: list[dict], **kwargs: object) -> str:
-    """Return the LLM text response for *messages* using the given tier.
+def _groq_model(tier: Tier) -> str:
+    return settings.groq_mini_model if tier == "mini" else settings.groq_nano_model
 
-    Parameters
-    ----------
-    tier:
-        "mini" -> settings.mini_model; "nano" -> settings.nano_model.
-    messages:
-        OpenAI-format message list, e.g. [{"role": "user", "content": "..."}].
-    **kwargs:
-        Forwarded to openai.chat.completions.create (e.g. temperature, max_tokens).
-        Ignored in mock mode.
-    """
-    if settings.mock_llm:
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def complete(tier: Tier, messages: list[dict], **kwargs: object) -> str:
+    """Return the LLM text response for *messages* using the given tier."""
+    if _PROVIDER == "mock":
         return _mock_complete(tier, messages)
 
-    import openai  # deferred import — not needed in mock mode
+    if _PROVIDER == "openai":
+        import openai
+        client = openai.OpenAI(api_key=settings.openai_api_key)
+        response = client.chat.completions.create(
+            model=_openai_model(tier),
+            messages=messages,  # type: ignore[arg-type]
+            **kwargs,
+        )
+        return response.choices[0].message.content or ""
 
-    client = openai.OpenAI(api_key=settings.openai_api_key)
+    # groq — OpenAI-compatible client
+    from groq import Groq
+    client = Groq(api_key=settings.groq_api_key)
     response = client.chat.completions.create(
-        model=_tier_model(tier),
+        model=_groq_model(tier),
         messages=messages,  # type: ignore[arg-type]
         **kwargs,
     )
@@ -80,28 +116,36 @@ def complete(tier: Tier, messages: list[dict], **kwargs: object) -> str:
 
 
 def embed(texts: list[str]) -> list[list[float]]:
-    """Return embeddings for each text string.
-
-    Parameters
-    ----------
-    texts:
-        Non-empty list of strings to embed.
-
-    Returns
-    -------
-    list of float lists, one per input text.
-    """
+    """Return embeddings for each text string."""
     if not texts:
         return []
 
-    if settings.mock_llm:
+    if _PROVIDER == "mock":
         return [_mock_embed(t) for t in texts]
 
-    import openai  # deferred import
+    if _PROVIDER == "openai":
+        import openai
+        client = openai.OpenAI(api_key=settings.openai_api_key)
+        response = client.embeddings.create(
+            model=settings.embed_model,
+            input=texts,
+        )
+        return [item.embedding for item in response.data]
 
-    client = openai.OpenAI(api_key=settings.openai_api_key)
-    response = client.embeddings.create(
-        model=settings.embed_model,
-        input=texts,
-    )
-    return [item.embedding for item in response.data]
+    # groq — no embed API; use local sentence-transformers model
+    from sentence_transformers import SentenceTransformer
+    _groq_embed_model = _get_groq_embed_model()
+    vecs = _groq_embed_model.encode(texts, convert_to_numpy=True)
+    return [v.tolist() for v in vecs]
+
+
+# Module-level cache for the local embed model (only instantiated when needed)
+_groq_embed_model_cache: object = None
+
+
+def _get_groq_embed_model():
+    global _groq_embed_model_cache
+    if _groq_embed_model_cache is None:
+        from sentence_transformers import SentenceTransformer
+        _groq_embed_model_cache = SentenceTransformer("all-MiniLM-L6-v2")
+    return _groq_embed_model_cache

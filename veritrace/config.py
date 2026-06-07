@@ -19,12 +19,17 @@ class Settings(BaseSettings):
     )
 
     # --- API keys ---
-    openai_api_key: str = "sk-MOCK"
+    openai_api_key: str = ""
+    groq_api_key: str = ""
 
-    # --- Model tier names (configurable; verify against OpenAI dashboard) ---
+    # --- OpenAI model tier names ---
     mini_model: str = "gpt-5.4-mini"
     nano_model: str = "gpt-5.4-nano"
     embed_model: str = "text-embedding-3-small"
+
+    # --- Groq model tier names ---
+    groq_mini_model: str = "llama-3.3-70b-versatile"
+    groq_nano_model: str = "llama-3.1-8b-instant"
 
     # --- Mock flag ---
     mock_llm: bool = True

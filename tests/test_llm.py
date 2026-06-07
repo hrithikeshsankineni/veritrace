@@ -84,3 +84,19 @@ def test_embed_unit_norm_approx():
     vec = embed(["normalize me"])[0]
     norm_sq = sum(x * x for x in vec)
     assert abs(norm_sq - 1.0) < 1e-6
+
+
+def test_provider_selection_groq_when_no_openai_key():
+    """When OPENAI_API_KEY is empty and GROQ_API_KEY is set, provider resolves to groq."""
+    from veritrace.llm import _detect_provider
+    from veritrace.config import Settings
+    import veritrace.llm as llm_module
+
+    groq_settings = Settings(mock_llm=False, openai_api_key="", groq_api_key="gsk_test")
+    original = llm_module.settings
+    try:
+        llm_module.settings = groq_settings
+        provider = _detect_provider()
+        assert provider == "groq"
+    finally:
+        llm_module.settings = original
