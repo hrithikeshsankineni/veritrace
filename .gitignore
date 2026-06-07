@@ -1,9 +1,11 @@
 .env
+.streamlit/secrets.toml
 __pycache__/
 *.pyc
 .venv/
 venv/
 chroma/
+chroma_console/
 *.sqlite
 data/synthetic/*
 !data/synthetic/.gitkeep
