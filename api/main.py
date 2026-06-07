@@ -6,6 +6,7 @@ Endpoints:
   GET  /v1/receipts/{id}        — retrieve a sealed Trust Receipt
   GET  /v1/sources              — list indexed sources for a tenant
   GET  /v1/usage                — aggregate usage for a tenant
+  POST /v1/assure               — run Assurance Engine scan → Trust Score + report
 
 Startup lifecycle:
   - Seeds synthetic corpus if data/synthetic/ is empty.
@@ -24,6 +25,9 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
+from veritrace.assurance.attacks import generate_attacks
+from veritrace.assurance.runner import run_attacks
+from veritrace.assurance.score import compute_score
 from veritrace.audit import AuditStore
 from veritrace.config import settings
 from veritrace.index.embeddings import embed_chunks
@@ -231,3 +235,23 @@ def usage(tenant_id: str = settings.default_tenant) -> dict:
     if _audit is None:
         return {"tenant_id": tenant_id, "total_queries": 0, "total_cost_usd": 0.0}
     return dict(_audit.get_usage(tenant_id))
+
+
+# ---------------------------------------------------------------------------
+# Assurance Engine
+# ---------------------------------------------------------------------------
+
+@app.post("/v1/assure", tags=["assurance"])
+def assure(tenant_id: str = settings.default_tenant) -> dict:
+    """Run the Assurance Engine scan and return a Trust Score + report.
+
+    Generates the full attack set for *tenant_id*, runs each case through
+    the pipeline, and returns an AssuranceReport with Trust Score (0–100).
+    """
+    if _store is None:
+        raise HTTPException(status_code=503, detail="Service not ready.")
+
+    attacks = generate_attacks(tenant_id)
+    results = run_attacks(attacks, tenant_id, _store)
+    report = compute_score(results, tenant_id)
+    return report.model_dump(mode="json")

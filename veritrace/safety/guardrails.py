@@ -75,7 +75,9 @@ _OUT_OF_SCOPE_KEYWORDS = frozenset([
     "bitcoin", "crypto", "stock market", "recipe", "cooking", "game",
     "movie", "music", "sports", "weather", "politics", "election",
     "celebrity", "social media", "dating", "travel", "hotel",
-    "write code", "coding tutorial", "hack", "malware", "exploit",
+    "write code", "write a script", "write me a", "python script", "scrape",
+    "coding tutorial", "hack", "malware", "exploit",
+    "medical advice", "individualized", "diagnose me", "treat my",
     "poem", "story", "fiction", "essay", "debate",
 ])
 
