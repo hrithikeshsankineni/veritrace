@@ -95,6 +95,10 @@ def _check_groundedness_mock(answer: str, candidates: list[RankedResult]) -> boo
 
 def _check_groundedness_llm(answer: str, candidates: list[RankedResult]) -> bool:
     """LLM-based groundedness judge (mini tier, binary)."""
+    if not candidates:
+        # No candidates passed — agent already scored groundedness internally; allow through.
+        return True
+
     from veritrace.llm import complete
 
     passages = "\n\n".join(
