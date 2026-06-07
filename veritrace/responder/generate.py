@@ -116,7 +116,11 @@ def _mock_generate(query: str, candidates: list[RankedResult]) -> GenerationResu
     )
 
 
-def generate(query: str, candidates: list[RankedResult]) -> GenerationResult:
+def generate(
+    query: str,
+    candidates: list[RankedResult],
+    history: list[dict] | None = None,
+) -> GenerationResult:
     """Generate a grounded answer from *candidates*.
 
     Parameters
@@ -125,6 +129,9 @@ def generate(query: str, candidates: list[RankedResult]) -> GenerationResult:
         The (rewritten) user query.
     candidates:
         Top-k re-ranked candidates from the retrieval pipeline.
+    history:
+        Optional list of prior-turn messages (OpenAI format) to include as
+        conversational context before the current question.
 
     Returns
     -------
@@ -139,10 +146,11 @@ def generate(query: str, candidates: list[RankedResult]) -> GenerationResult:
         return GenerationResult(answer=_ABSTAIN_TEXT, citations=[], groundedness_score=0.0)
 
     context = _build_context(candidates)
-    messages = [
-        {"role": "system", "content": _SYSTEM_PROMPT},
-        {"role": "user", "content": f"Passages:\n{context}\n\nQuestion: {query}"},
-    ]
+    messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
+    # Inject prior conversation turns (up to last 6 messages to stay within token budget)
+    if history:
+        messages.extend(history[-6:])
+    messages.append({"role": "user", "content": f"Passages:\n{context}\n\nQuestion: {query}"})
 
     answer = complete("mini", messages, max_tokens=512)
     citations = _extract_citations(answer, candidates)

@@ -191,7 +191,7 @@ with st.sidebar:
 # Tabs
 # ---------------------------------------------------------------------------
 
-tab_chat, tab_assure = st.tabs(["Chat", "Assurance Scan"])
+tab_chat, tab_upload, tab_assure = st.tabs(["Chat", "Upload Docs", "Assurance Scan"])
 
 # ---------------------------------------------------------------------------
 # Tab 1 — Chat
@@ -229,7 +229,80 @@ with tab_chat:
         })
 
 # ---------------------------------------------------------------------------
-# Tab 2 — Assurance Scan
+# Tab 2 — Upload Docs
+# ---------------------------------------------------------------------------
+
+with tab_upload:
+    st.subheader("Upload Documents")
+    st.caption(
+        "Upload Markdown (.md) or plain text (.txt) files to add them to the "
+        "knowledge base for the selected tenant. Documents are chunked, embedded, "
+        "and indexed immediately."
+    )
+
+    uploaded_files = st.file_uploader(
+        "Choose files",
+        type=["md", "txt"],
+        accept_multiple_files=True,
+        key="doc_uploader",
+    )
+
+    source_id_input = st.text_input(
+        "Source ID (optional — used for citations)",
+        placeholder="e.g. policy_2026_q3",
+    )
+    authority = st.selectbox("Authority level", ["primary", "secondary", "reference"])
+    effective_date = st.date_input("Effective date")
+
+    if st.button("Ingest Documents", type="primary", disabled=not uploaded_files):
+        from veritrace.ingest.chunker import chunk as chunk_doc
+        from veritrace.index.embeddings import embed_chunks
+
+        store, _ = _init_pipeline()
+        total_chunks = 0
+        progress = st.progress(0)
+
+        for i, uf in enumerate(uploaded_files):
+            raw = uf.read().decode("utf-8", errors="replace")
+            # Build a minimal parsed doc dict
+            fname = uf.name
+            sid = source_id_input.strip() or fname.replace(" ", "_").lower()
+            if len(uploaded_files) > 1:
+                sid = f"{sid}_{i+1}" if source_id_input else sid
+
+            doc = {
+                "text": raw,
+                "metadata": {
+                    "source_id": sid,
+                    "tenant_id": tenant_id,
+                    "title": fname,
+                    "authority_level": authority,
+                    "effective_date": str(effective_date),
+                    "doc_type": "uploaded",
+                },
+            }
+            from veritrace.ingest.chunker import chunk as _chunk_doc
+            chunks = _chunk_doc(doc)
+            if chunks:
+                store.add(chunks, embed_chunks(chunks))
+                total_chunks += len(chunks)
+            progress.progress((i + 1) / len(uploaded_files))
+
+        progress.empty()
+        st.success(
+            f"Ingested {len(uploaded_files)} file(s) → {total_chunks} chunks "
+            f"added to tenant **{tenant_id}**."
+        )
+        st.info(f"Knowledge base now has {store.count(tenant_id)} total chunks.")
+
+    st.markdown("---")
+    st.markdown("**Current knowledge base**")
+    store, _ = _init_pipeline()
+    st.metric("Total chunks indexed", store.count(tenant_id))
+
+
+# ---------------------------------------------------------------------------
+# Tab 3 — Assurance Scan
 # ---------------------------------------------------------------------------
 
 with tab_assure:

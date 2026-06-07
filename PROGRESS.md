@@ -52,11 +52,11 @@
 
 ## Tier 3 — Enhancements (only if time remains)
 
-- [ ] **8.1 Conflict resolution.** Extend `responder/evidence.py`: detect conflicting top-k, resolve by authority/recency, disclose in answer + receipt. *DoD:* the seeded conflict resolves to the current doc and discloses the superseded one.
+- [x] **8.1 Conflict resolution.** DONE `responder/conflict.py`: detect conflicting top-k by explicit supersedes link or effective_date; resolve to newer doc; filter superseded candidates before generation; disclose in ConflictInfo of Trust Receipt. 14 tests.
 - [ ] **8.2 MCP tool server + verified action.** `tools/mcp_server.py` + `tools/actions.py`: one read tool + one state-changing tool behind a verify-then-execute gate; agent routes action intents to it. *DoD:* an action query executes a verified, logged tool call.
-- [ ] **8.3 Short-term memory.** `memory.py` + `/v1/chat`. *DoD:* follow-up question uses prior turn.
-- [ ] **8.4 Semantic cache.** `cache.py`: similar repeat query short-circuits. *DoD:* a repeat query is served from cache with lower latency.
-- [ ] **8.5 Evals harness + golden set.** `evals/golden.jsonl` (~30–50 cases) + a runner reporting the metrics in the eval doc. *DoD:* `python -m evals` prints metrics; the Assurance Engine reuses this scoring.
+- [x] **8.3 Short-term memory.** DONE `memory.py` (thread-safe SessionMemory, MAX_TURNS=10) + `/v1/chat` endpoint. History injected into generation prompt for follow-up questions. 11 tests.
+- [x] **8.4 Semantic cache.** DONE `cache.py`: cosine similarity ≥0.92 short-circuits retrieval; LRU eviction per tenant (max 256); route set to "cached". 9 tests.
+- [x] **8.5 Evals harness + golden set.** DONE `evals/golden.jsonl` (40 cases across 7 categories) + `evals/__main__.py` runner. `python -m evals` prints per-category metrics + writes evals/last_run.json. 9 harness tests.
 
 ---
 

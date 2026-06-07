@@ -27,12 +27,13 @@ from typing import Optional
 
 from veritrace.config import settings
 from veritrace.index.store import VectorStore
+from veritrace.responder.conflict import detect_and_resolve
 from veritrace.responder.evidence import check_sufficiency
 from veritrace.responder.generate import generate
 from veritrace.retrieval.rerank import rerank
 from veritrace.retrieval.retrieve import retrieve
 from veritrace.retrieval.rewrite import rewrite
-from veritrace.schemas import TrustReceipt
+from veritrace.schemas import ConflictInfo, TrustReceipt
 
 _ACTION_KEYWORDS = frozenset(
     ["open ticket", "file claim", "submit", "create ticket", "update", "cancel", "change"]
@@ -77,6 +78,7 @@ def answer(
     tenant_id: str,
     store: VectorStore,
     start_time: Optional[float] = None,
+    session_id: Optional[str] = None,
 ) -> TrustReceipt:
     """Run the responder pipeline and return a TrustReceipt.
 
@@ -123,10 +125,14 @@ def answer(
         rewritten, candidates_wide, top_k=settings.retrieval_top_k_final
     )
 
-    # 5. Evidence sufficiency
-    ev = check_sufficiency(rewritten, candidates_ranked)
+    # 5. Conflict detection and resolution
+    conflict_result = detect_and_resolve(candidates_ranked)
+    candidates_clean = conflict_result["filtered"]
 
-    # 6a. Abstain
+    # 6. Evidence sufficiency
+    ev = check_sufficiency(rewritten, candidates_clean)
+
+    # 7a. Abstain
     if not ev["sufficient"]:
         latency_ms = (time.time() - t0) * 1000
         return TrustReceipt(
@@ -134,22 +140,36 @@ def answer(
             route="knowledge",
             answer=_ABSTAIN_TEXT,
             confidence="abstained",
+            conflict=ConflictInfo(
+                detected=conflict_result["detected"],
+                description=conflict_result["description"],
+                resolved_to=conflict_result["resolved_to"],
+            ),
             latency_ms=round(latency_ms, 1),
             model_profile="mini",
         )
 
-    # 6b. Generate
-    gen = generate(rewritten, ev["top_candidates"])
+    # 7b. Generate (inject conversation history if session provided)
+    history: list[dict] = []
+    if session_id:
+        from veritrace.memory import get_history
+        history = get_history(session_id)
+    gen = generate(rewritten, ev["top_candidates"], history=history or None)
 
     latency_ms = (time.time() - t0) * 1000
 
-    # 7. Seal receipt
+    # 8. Seal receipt
     return TrustReceipt(
         tenant=tenant_id,
         route="knowledge",
         answer=gen["answer"],
         confidence=ev["confidence"],
         citations=gen["citations"],
+        conflict=ConflictInfo(
+            detected=conflict_result["detected"],
+            description=conflict_result["description"],
+            resolved_to=conflict_result["resolved_to"],
+        ),
         groundedness_score=gen["groundedness_score"],
         latency_ms=round(latency_ms, 1),
         model_profile="mini",

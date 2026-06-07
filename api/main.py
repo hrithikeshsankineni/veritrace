@@ -38,6 +38,8 @@ from veritrace.responder.agent import answer
 from veritrace.safety.guardrails import check_input
 from veritrace.safety.output_gate import check_output
 from veritrace.safety.redaction import redact, restore
+from veritrace.cache import cache_put, get_cached
+from veritrace.memory import add_turn, get_history
 from veritrace.schemas import QueryRequest, RedactionInfo, RefusalInfo, TrustReceipt
 
 # ---------------------------------------------------------------------------
@@ -161,13 +163,23 @@ def query(request: QueryRequest) -> TrustReceipt:
         _audit.persist_receipt(receipt)
         return receipt
 
-    # 2. PII/PHI redaction
+    # 2. Semantic cache check (embed the raw query for similarity lookup)
+    from veritrace.index.embeddings import embed_query
+    query_embedding = embed_query(raw_query)
+    cached = get_cached(tenant_id, query_embedding)
+    if cached is not None:
+        cached_hit = cached.model_copy(update={"route": "cached"})
+        _audit.persist_receipt(cached_hit)
+        return cached_hit
+
+    # 3. PII/PHI redaction
     redacted_query, redact_ctx = redact(raw_query)
 
-    # 3. Responder agent
-    receipt = answer(redacted_query, tenant_id, _store, start_time=t0)
+    # 4. Responder agent
+    receipt = answer(redacted_query, tenant_id, _store, start_time=t0,
+                     session_id=request.session_id)
 
-    # 4. Output gate
+    # 5. Output gate
     gate = check_output(receipt.answer, redacted_query, [])
     if not gate["passed"]:
         receipt = TrustReceipt(
@@ -181,7 +193,7 @@ def query(request: QueryRequest) -> TrustReceipt:
         _audit.persist_receipt(receipt)
         return receipt
 
-    # 5. Restore PII placeholders in answer
+    # 6. Restore PII placeholders in answer
     if redact_ctx.applied:
         receipt = receipt.model_copy(
             update={
@@ -192,9 +204,35 @@ def query(request: QueryRequest) -> TrustReceipt:
             }
         )
 
-    # 6. Persist and return
+    # 7. Store in semantic cache (only cache non-abstained, non-refused answers)
+    if receipt.confidence not in ("abstained",) and receipt.route != "refused":
+        cache_put(tenant_id, raw_query, query_embedding, receipt)
+
+    # 8. Update session memory
+    if request.session_id:
+        add_turn(request.session_id, "user", raw_query)
+        add_turn(request.session_id, "assistant", receipt.answer)
+
+    # 9. Persist and return
     _audit.persist_receipt(receipt)
     return receipt
+
+
+# ---------------------------------------------------------------------------
+# Chat — multi-turn conversation with session memory
+# ---------------------------------------------------------------------------
+
+@app.post("/v1/chat", response_model=TrustReceipt, tags=["query"])
+def chat(request: QueryRequest) -> TrustReceipt:
+    """Multi-turn chat endpoint.  Same pipeline as /v1/query but automatically
+    manages session memory when *session_id* is provided.
+
+    The conversation history is injected into the generation prompt so the
+    model can answer follow-up questions that refer to prior turns.
+    Pass the same *session_id* across calls to maintain context.
+    """
+    # Delegate to /v1/query — session_id handling is already wired there
+    return query(request)
 
 
 # ---------------------------------------------------------------------------
