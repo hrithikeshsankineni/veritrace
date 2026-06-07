@@ -109,10 +109,12 @@ def rerank(
     if settings.mock_llm:
         scores = [_mock_score(query, c["text"]) for c in candidates]
     else:
+        import math
         encoder = _get_encoder()
         pairs = [(query, c["text"]) for c in candidates]
         raw_scores = encoder.predict(pairs)
-        scores = [float(s) for s in raw_scores]
+        # Cross-encoder returns raw logits; apply sigmoid to map into (0, 1)
+        scores = [1.0 / (1.0 + math.exp(-float(s))) for s in raw_scores]
 
     ranked: list[RankedResult] = []
     for candidate, score in zip(candidates, scores):
