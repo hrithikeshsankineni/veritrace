@@ -33,7 +33,14 @@ from veritrace.retrieval.rewrite import rewrite
 from veritrace.schemas import ConflictInfo, TrustReceipt
 
 _ACTION_KEYWORDS = frozenset(
-    ["open ticket", "file claim", "submit", "create ticket", "update", "cancel", "change"]
+    [
+        # write actions
+        "open ticket", "file claim", "file inquiry", "submit", "create ticket",
+        "update", "cancel", "change", "appeal", "dispute",
+        # read tool actions (member-scoped DB lookup)
+        "look up", "lookup", "check coverage for", "coverage for member",
+        "my coverage", "member id",
+    ]
 )
 
 _ABSTAIN_TEXT = (
