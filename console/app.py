@@ -188,39 +188,111 @@ with st.sidebar:
     st.info(f"Mode: {'**MOCK**' if settings.mock_llm else '**LIVE**'}")
 
 # ---------------------------------------------------------------------------
-# Chat history
+# Tabs
 # ---------------------------------------------------------------------------
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        if msg.get("receipt"):
-            _render_receipt(msg["receipt"])
+tab_chat, tab_assure = st.tabs(["Chat", "Assurance Scan"])
 
 # ---------------------------------------------------------------------------
-# Input + pipeline
+# Tab 1 — Chat
 # ---------------------------------------------------------------------------
 
-prefill = st.session_state.pop("prefill", "")
-user_input = st.chat_input("Ask about your health plan coverage…") or prefill
+with tab_chat:
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            if msg.get("receipt"):
+                _render_receipt(msg["receipt"])
 
-    store, audit = _init_pipeline()
-    with st.chat_message("assistant"):
-        with st.spinner("Searching knowledge base…"):
-            receipt = _run_query(user_input, tenant_id, store, audit)
-        st.markdown(receipt.answer)
-        _render_receipt(receipt)
+    prefill = st.session_state.pop("prefill", "")
+    user_input = st.chat_input("Ask about your health plan coverage…") or prefill
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": receipt.answer,
-        "receipt": receipt,
-    })
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        store, audit = _init_pipeline()
+        with st.chat_message("assistant"):
+            with st.spinner("Searching knowledge base…"):
+                receipt = _run_query(user_input, tenant_id, store, audit)
+            st.markdown(receipt.answer)
+            _render_receipt(receipt)
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": receipt.answer,
+            "receipt": receipt,
+        })
+
+# ---------------------------------------------------------------------------
+# Tab 2 — Assurance Scan
+# ---------------------------------------------------------------------------
+
+with tab_assure:
+    st.subheader("Assurance Engine")
+    st.caption(
+        "Runs a battery of adversarial attacks through the full pipeline and "
+        "scores how well the system defends against each class."
+    )
+
+    if st.button("Run Assurance Scan", type="primary", use_container_width=False):
+        from veritrace.assurance.attacks import generate_attacks
+        from veritrace.assurance.runner import run_attacks
+        from veritrace.assurance.score import compute_score
+
+        store, _ = _init_pipeline()
+        attacks = generate_attacks(tenant_id)
+
+        progress_bar = st.progress(0, text="Running attacks…")
+        results_placeholder = st.empty()
+        rows: list[dict] = []
+
+        with st.spinner(""):
+            results = run_attacks(attacks, tenant_id, store)
+
+        progress_bar.empty()
+
+        # Trust Score headline
+        report = compute_score(results, tenant_id)
+        score_color = "green" if report.trust_score >= 80 else ("orange" if report.trust_score >= 50 else "red")
+        st.markdown(
+            f"### Trust Score: :{score_color}[**{report.trust_score:.1f} / 100**]"
+        )
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Attacks", report.total_attacks)
+        col2.metric("Passed", report.passed, delta=None)
+        col3.metric("Failed", report.failed, delta=None)
+
+        # Per-class breakdown
+        st.markdown("#### Per-class results")
+        cls_cols = st.columns(len(report.per_class))
+        for i, (cls, data) in enumerate(sorted(report.per_class.items())):
+            s = data["score"]
+            color = "green" if s == 100 else ("orange" if s >= 50 else "red")
+            cls_cols[i].metric(
+                cls.replace("_", " ").title(),
+                f"{s:.0f}%",
+                f"{data['passed']}/{data['total']}",
+            )
+
+        # Attack-level results
+        st.markdown("#### Attack results")
+        for r in results:
+            icon = "✅" if r.passed else "❌"
+            label = f"{icon} `{r.attack_id}` — **{r.attack_class}**"
+            with st.expander(label, expanded=not r.passed):
+                st.markdown(f"**Prompt:** {r.prompt}")
+                st.markdown(f"**Result:** {r.notes}")
+                with st.expander("Trust Receipt", expanded=False):
+                    st.json(r.receipt.model_dump(mode="json"))
+
+        # Findings
+        if report.findings:
+            st.markdown("#### Findings")
+            for f in report.findings:
+                st.error(f)

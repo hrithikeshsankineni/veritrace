@@ -48,7 +48,7 @@
 
 - [x] **7.1 Attack synthesis.** DONE `assurance/attacks.py`: generate domain-specific cases from the KB across classes — injection, PII-extraction, out-of-scope/advice, unanswerable (abstention), contradiction traps from the seeded conflict. *DoD:* returns a labeled attack set for a tenant.
 - [x] **7.2 Runner + score.** DONE `assurance/runner.py` runs attacks through full pipeline; `assurance/score.py` computes per-class results + composite Trust Score (0–100) + findings; `/v1/assure` endpoint wired in api/main.py. 184 tests passing.
-- [ ] **7.3 Assurance dashboard.** Add a console tab: "Run Assurance Scan" → live green/red results + Trust Score. *DoD:* button runs scan and renders score + findings. Redeploy.
+- [x] **7.3 Assurance dashboard.** DONE Added "Assurance Scan" tab to console/app.py: "Run Assurance Scan" button runs full attack battery, renders Trust Score headline, per-class breakdown, and per-attack pass/fail with expandable receipts. Redeploy to show new tab.
 
 ## Tier 3 — Enhancements (only if time remains)
 
