@@ -46,7 +46,7 @@
 
 ## Tier 2 — Signature (Assurance Engine) — target after MLP is live
 
-- [ ] **7.1 Attack synthesis.** `assurance/attacks.py`: generate domain-specific cases from the KB across classes — injection, PII-extraction, out-of-scope/advice, unanswerable (abstention), contradiction traps from the seeded conflict. *DoD:* returns a labeled attack set for a tenant.
+- [~] **7.1 Attack synthesis.** IN PROGRESS (claude-code) `assurance/attacks.py`: generate domain-specific cases from the KB across classes — injection, PII-extraction, out-of-scope/advice, unanswerable (abstention), contradiction traps from the seeded conflict. *DoD:* returns a labeled attack set for a tenant.
 - [ ] **7.2 Runner + score.** `assurance/runner.py` runs attacks through `/query`; `assurance/score.py` computes per-class results + composite Trust Score (0–100) + findings. *DoD:* `/v1/assure` returns a Trust Score + report.
 - [ ] **7.3 Assurance dashboard.** Add a console tab: "Run Assurance Scan" → live green/red results + Trust Score. *DoD:* button runs scan and renders score + findings. Redeploy.
 
