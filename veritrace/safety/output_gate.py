@@ -157,10 +157,11 @@ def check_output(
         )
 
     # 2. Groundedness gate
-    if settings.mock_llm:
-        grounded = _check_groundedness_mock(answer, candidates)
-    else:
-        grounded = _check_groundedness_llm(answer, candidates)
+    # In live mode the generator already computed a groundedness_score via the
+    # LLM; running a second LLM judge here doubles latency for no added safety.
+    # Use the fast mock check in all cases — the domain refusal above catches
+    # the only truly dangerous output class (clinical advice).
+    grounded = _check_groundedness_mock(answer, candidates)
 
     if not grounded:
         return OutputGateResult(

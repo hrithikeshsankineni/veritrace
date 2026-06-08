@@ -104,9 +104,21 @@ def _check_scope_mock(query: str) -> bool:
 
 
 def _check_scope_llm(query: str) -> bool:
-    """Return True (in scope) or False (out of scope) — nano LLM."""
-    from veritrace.llm import complete
+    """Return True (in scope) or False (out of scope).
 
+    Uses keyword shortcuts first to avoid an LLM call on clear cases:
+    - Clearly out-of-scope keywords → False immediately
+    - Clearly in-scope keywords → True immediately
+    - Ambiguous → nano LLM classification
+    """
+    lower = query.lower()
+    if any(kw in lower for kw in _OUT_OF_SCOPE_KEYWORDS):
+        return False
+    if any(kw in lower for kw in _IN_SCOPE_KEYWORDS):
+        return True
+
+    # Genuinely ambiguous — call the LLM
+    from veritrace.llm import complete
     result = complete(
         "nano",
         [{"role": "user", "content": _SCOPE_PROMPT.format(query=query)}],

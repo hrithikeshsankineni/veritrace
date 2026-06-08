@@ -183,6 +183,7 @@ def answer(
             resolved_to=conflict_result["resolved_to"],
         ),
         groundedness_score=gen["groundedness_score"],
+        cost_usd=gen.get("cost_usd", 0.0),
         latency_ms=round(latency_ms, 1),
         model_profile="mini",
     )

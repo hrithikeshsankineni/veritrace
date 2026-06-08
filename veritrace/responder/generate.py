@@ -49,6 +49,7 @@ class GenerationResult(TypedDict):
     answer: str
     citations: list[Citation]
     groundedness_score: float
+    cost_usd: float
 
 
 def _build_context(candidates: list[RankedResult]) -> str:
@@ -83,6 +84,23 @@ def _extract_citations(answer: str, candidates: list[RankedResult]) -> list[Cita
     return citations
 
 
+_COST_PER_1K_INPUT = 0.00015   # gpt-5.4-mini input  $/1k tokens (approx)
+_COST_PER_1K_OUTPUT = 0.0006   # gpt-5.4-mini output $/1k tokens (approx)
+_AVG_CHARS_PER_TOKEN = 4.0
+
+
+def _estimate_cost(messages: list[dict], answer: str) -> float:
+    input_chars = sum(len(m.get("content", "")) for m in messages)
+    output_chars = len(answer)
+    input_tokens = input_chars / _AVG_CHARS_PER_TOKEN
+    output_tokens = output_chars / _AVG_CHARS_PER_TOKEN
+    return round(
+        (input_tokens / 1000) * _COST_PER_1K_INPUT
+        + (output_tokens / 1000) * _COST_PER_1K_OUTPUT,
+        6,
+    )
+
+
 def _mock_generate(query: str, candidates: list[RankedResult]) -> GenerationResult:
     """Deterministic mock that always cites the first candidate."""
     if not candidates:
@@ -113,6 +131,7 @@ def _mock_generate(query: str, candidates: list[RankedResult]) -> GenerationResu
         answer=answer,
         citations=citations,
         groundedness_score=round(min(gs, 1.0), 4),
+        cost_usd=0.0,
     )
 
 
@@ -143,7 +162,7 @@ def generate(
         return _mock_generate(query, candidates)
 
     if not candidates:
-        return GenerationResult(answer=_ABSTAIN_TEXT, citations=[], groundedness_score=0.0)
+        return GenerationResult(answer=_ABSTAIN_TEXT, citations=[], groundedness_score=0.0, cost_usd=0.0)
 
     context = _build_context(candidates)
     messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
@@ -157,8 +176,13 @@ def generate(
 
     # Groundedness score: fraction of cited candidates / total candidates
     gs = len(citations) / len(candidates) if candidates else 0.0
+
+    # Cost tracking — OpenAI pricing (approximate)
+    _cost = _estimate_cost(messages, answer)
+
     return GenerationResult(
         answer=answer,
         citations=citations,
         groundedness_score=round(gs, 4),
+        cost_usd=_cost,
     )
