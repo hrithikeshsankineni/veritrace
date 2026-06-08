@@ -498,7 +498,7 @@ with st.sidebar:
     st.markdown('<hr style="border-color:#334155; margin:8px 0 16px;">', unsafe_allow_html=True)
 
     st.markdown('<div style="font-size:0.75rem; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Tenant</div>', unsafe_allow_html=True)
-    tenant_id = st.text_input("", value="demo", label_visibility="collapsed")
+    tenant_id = st.text_input("Tenant ID", value="demo", label_visibility="collapsed")
 
     st.markdown('<hr style="border-color:#334155; margin:16px 0 12px;">', unsafe_allow_html=True)
     st.markdown('<div style="font-size:0.75rem; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Sample Queries</div>', unsafe_allow_html=True)
