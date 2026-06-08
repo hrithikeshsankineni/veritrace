@@ -97,6 +97,9 @@ def complete(tier: Tier, messages: list[dict], **kwargs: object) -> str:
     if _PROVIDER == "openai":
         import openai
         client = openai.OpenAI(api_key=settings.openai_api_key)
+        # gpt-5.4-* uses max_completion_tokens; translate max_tokens if passed
+        if "max_tokens" in kwargs:
+            kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
         response = client.chat.completions.create(
             model=_openai_model(tier),
             messages=messages,  # type: ignore[arg-type]
