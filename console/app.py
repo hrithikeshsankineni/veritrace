@@ -566,7 +566,7 @@ with tab_chat:
     # Render history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            st.markdown(msg["content"].replace("$", "\\$"))
             if msg.get("receipt"):
                 _render_receipt(msg["receipt"])
 
@@ -582,7 +582,7 @@ with tab_chat:
         with st.chat_message("assistant"):
             with st.spinner("Searching knowledge base…"):
                 receipt = _run_query(user_input, tenant_id, store, audit)
-            st.markdown(receipt.answer)
+            st.markdown(receipt.answer.replace("$", "\\$"))
             _render_receipt(receipt)
 
         st.session_state.messages.append({
