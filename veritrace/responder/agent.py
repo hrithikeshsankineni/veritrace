@@ -50,23 +50,27 @@ _ABSTAIN_TEXT = (
 
 
 def _classify_intent(query: str) -> str:
-    """Simple keyword-based intent classifier.
+    """Keyword-first intent classifier — avoids an LLM call for clear cases.
 
-    Returns "action" if the query requests a state-changing operation,
-    otherwise "knowledge".  The nano LLM is used when not in mock mode.
+    Returns "action" if the query requests a tool-based operation (DB lookup
+    or state-changing request), otherwise "knowledge".
     """
+    lower = query.lower()
+    # Keyword shortcut works in both mock and live mode
+    if any(kw in lower for kw in _ACTION_KEYWORDS):
+        return "action"
+
     if settings.mock_llm:
-        lower = query.lower()
-        if any(kw in lower for kw in _ACTION_KEYWORDS):
-            return "action"
         return "knowledge"
 
+    # Genuinely ambiguous — ask the nano LLM
     from veritrace.llm import complete
 
     prompt = (
         "Classify this query as exactly one word: 'knowledge' or 'action'.\n"
         "- 'knowledge': asking for information or an explanation.\n"
-        "- 'action': requesting a state-changing operation (file, submit, create, update, cancel).\n"
+        "- 'action': requesting a state-changing operation (file, submit, create, update, cancel) "
+        "or a member-specific database lookup.\n"
         f"Query: {query}"
     )
     result = complete(
