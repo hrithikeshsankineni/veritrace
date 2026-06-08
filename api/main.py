@@ -177,7 +177,8 @@ def query(request: QueryRequest) -> TrustReceipt:
 
     # 4. Responder agent
     receipt = answer(redacted_query, tenant_id, _store, start_time=t0,
-                     session_id=request.session_id)
+                     session_id=request.session_id,
+                     original_query=request.query)
 
     # 5. Output gate
     gate = check_output(receipt.answer, redacted_query, [])

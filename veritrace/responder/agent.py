@@ -83,6 +83,7 @@ def answer(
     store: VectorStore,
     start_time: Optional[float] = None,
     session_id: Optional[str] = None,
+    original_query: Optional[str] = None,
 ) -> TrustReceipt:
     """Run the responder pipeline and return a TrustReceipt.
 
@@ -104,7 +105,8 @@ def answer(
 
     if intent == "action":
         from veritrace.tools.mcp_server import dispatch as mcp_dispatch
-        action_info = mcp_dispatch(query, tenant_id)
+        # Use the original (pre-redaction) query for MCP so member IDs are intact
+        action_info = mcp_dispatch(original_query or query, tenant_id)
         latency_ms = (time.time() - t0) * 1000
         answer_text = action_info.result or "Action completed."
         if not action_info.verified:

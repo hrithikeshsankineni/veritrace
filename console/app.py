@@ -363,7 +363,7 @@ def _run_query(query: str, tenant_id: str, store, audit):
         return receipt
 
     redacted_query, redact_ctx = redact(query)
-    receipt = answer(redacted_query, tenant_id, store, start_time=t0)
+    receipt = answer(redacted_query, tenant_id, store, start_time=t0, original_query=query)
 
     gate = check_output(receipt.answer, redacted_query, [])
     if not gate["passed"]:
