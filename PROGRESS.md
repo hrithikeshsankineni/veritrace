@@ -63,6 +63,11 @@
 ## Decisions / Notes
 *(Agents: append one line per non-obvious choice or deviation, newest last.)*
 - 0.1: Dropped `presidio-analyzer`, `presidio-anonymizer`, `spacy` from requirements — `blis` wheel fails to build on this platform (Python 3.9/macOS). PII redaction uses regex-only approach (AGENTS.md already specifies "regex first layer"). Note in safety/redaction.py task 4.1.
+- llm.py: Added Groq as free provider fallback (OpenAI → Groq → mock). gpt-5.4-* requires `max_completion_tokens` not `max_tokens` — translated in llm.py wrapper.
+- output_gate.py: Removed second LLM groundedness judge in live mode — generator already computes groundedness score; double-judging doubled latency with no safety gain.
+- guardrails.py + agent.py: Keyword shortcut runs before LLM classifier in live mode — eliminates one API round-trip for all clearly in/out-of-scope and clearly action queries.
+- agent.py: `original_query` parameter added — MCP dispatcher receives pre-redaction text so member IDs are intact; knowledge pipeline continues to use redacted query.
+- console/app.py: Dollar signs escaped before `st.markdown()` — Streamlit 1.41 treats `$...$` as LaTeX, scrambling dollar amounts in answers.
 
 ## Backlog (out of scope unless promoted)
 *(New ideas land here, not in the build.)*

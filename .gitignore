@@ -14,3 +14,5 @@ data/synthetic/*
 dist/
 build/
 .DS_Store
+chroma_eval/
+evals/last_run.json
